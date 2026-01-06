@@ -1,0 +1,174 @@
+import { useParams } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { lookupBook } from '../services/googleBooks';
+import { getEbayPrice } from '../services/ebay';
+import { getAmazonPrice } from '../services/amazon';
+import { getBookScouterPrice } from '../services/bookScouter';
+import { saveScan, getSettings } from '../services/storage';
+
+export default function Book() {
+  const { isbn } = useParams();
+  const [book, setBook] = useState(null);
+  const [prices, setPrices] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [profit, setProfit] = useState(null);
+
+  useEffect(() => {
+    async function load() {
+      setLoading(true);
+      const [bookData, ebay, amazon, bookScouter] = await Promise.all([
+        lookupBook(isbn),
+        getEbayPrice(isbn),
+        getAmazonPrice(isbn),
+        getBookScouterPrice(isbn)
+      ]);
+
+      const priceList = [];
+
+      if (bookData && bookData.priceNumber) {
+        priceList.push({
+          source: 'Google Books',
+          amount: bookData.priceNumber,
+          currency: bookData.currency || 'USD'
+        });
+      }
+
+      if (ebay) priceList.push({ source: 'eBay', ...ebay });
+      if (amazon) priceList.push({ source: 'Amazon', ...amazon });
+      if (bookScouter) priceList.push({ source: 'BookScouter', ...bookScouter });
+
+      setBook(bookData);
+      setPrices(priceList);
+
+      if (bookData) {
+        saveScan({
+          isbn,
+          title: bookData.title,
+          authors: bookData.authors,
+          thumbnail: bookData.thumbnail,
+          prices: priceList,
+          scannedAt: new Date().toISOString()
+        });
+      }
+
+      computeProfit(priceList);
+      setLoading(false);
+    }
+
+    load();
+  }, [isbn]);
+
+  function computeProfit(priceList) {
+    const settings = getSettings();
+    if (!settings || priceList.length === 0) {
+      setProfit(null);
+      return;
+    }
+
+    const best = priceList.reduce((max, p) =>
+      p.amount > max.amount ? p : max,
+      priceList[0]
+    );
+
+    const salePrice = best.amount;
+    const feePercent = parseFloat(settings.feePercent || 0) / 100;
+    const shippingCost = parseFloat(settings.shippingCost || 0);
+    const buyCost = parseFloat(settings.buyCost || 0);
+
+    const fees = salePrice * feePercent;
+    const profitValue = salePrice - fees - shippingCost - buyCost;
+
+    setProfit({
+      bestSource: best.source,
+      salePrice,
+      fees,
+      shippingCost,
+      buyCost,
+      profit: profitValue,
+      worthSelling: profitValue >= parseFloat(settings.minProfit || 0)
+    });
+  }
+
+  if (loading) {
+    return (
+      <div className="page">
+        <p>Loading book and prices…</p>
+      </div>
+    );
+  }
+
+  if (!book) {
+    return (
+      <div className="page">
+        <p>No book info found for ISBN: {isbn}</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="page">
+      <h2>{book.title}</h2>
+
+      {book.thumbnail && (
+        <img src={book.thumbnail} className="thumb" alt={book.title} />
+      )}
+
+      {book.authors && book.authors.length > 0 && (
+        <p className="muted">by {book.authors.join(', ')}</p>
+      )}
+
+      <p className="muted">ISBN: {isbn}</p>
+
+      <h3>Price comparison</h3>
+      {prices.length === 0 && <p>No price data available.</p>}
+
+      {prices.map((p, i) => (
+        <div key={i} className="card">
+          <div className="card-row">
+            <span>{p.source}</span>
+            <span>
+              {p.amount.toFixed(2)} {p.currency || 'USD'}
+            </span>
+          </div>
+        </div>
+      ))}
+
+      <h3>Profit estimate</h3>
+      {!profit && <p>Set your rules in Settings to see profit.</p>}
+
+      {profit && (
+        <div className="card">
+          <p>
+            <strong>Best source:</strong> {profit.bestSource}
+          </p>
+          <p>
+            <strong>Sale price:</strong> {profit.salePrice.toFixed(2)}
+          </p>
+          <p>
+            <strong>Fees:</strong> {profit.fees.toFixed(2)}
+          </p>
+          <p>
+            <strong>Shipping:</strong> {profit.shippingCost.toFixed(2)}
+          </p>
+          <p>
+            <strong>Buy cost:</strong> {profit.buyCost.toFixed(2)}
+          </p>
+          <p>
+            <strong>Estimated profit:</strong>{' '}
+            {profit.profit.toFixed(2)}
+          </p>
+          <p
+            className={
+              profit.worthSelling ? 'tag tag-good' : 'tag tag-bad'
+            }
+          >
+            {profit.worthSelling ? 'Worth selling' : 'Not worth selling'}
+          </p>
+        </div>
+      )}
+
+      <h3>Description</h3>
+      <p>{book.description || 'No description available.'}</p>
+    </div>
+  );
+}

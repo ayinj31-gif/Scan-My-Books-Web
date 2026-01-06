@@ -1,0 +1,52 @@
+import { BrowserMultiFormatReader } from '@zxing/library';
+import { useEffect, useRef, useState } from 'react';
+
+export default function Scanner({ onScan }) {
+  const videoRef = useRef(null);
+  const [error, setError] = useState(null);
+  const [scanned, setScanned] = useState(false);
+
+  useEffect(() => {
+    const reader = new BrowserMultiFormatReader();
+
+    async function start() {
+      try {
+        const devices = await reader.listVideoInputDevices();
+        if (!devices || devices.length === 0) {
+          setError('No camera found');
+          return;
+        }
+
+        const deviceId = devices[0].deviceId;
+
+        reader.decodeFromVideoDevice(deviceId, videoRef.current, (result, err) => {
+          if (result && !scanned) {
+            const text = result.getText();
+            setScanned(true);
+            onScan(text);
+          }
+          if (err && err.name !== 'NotFoundException') {
+            console.log(err);
+          }
+        });
+      } catch (e) {
+        console.log(e);
+        setError('Error accessing camera');
+      }
+    }
+
+    start();
+
+    return () => {
+      reader.reset();
+    };
+  }, [onScan, scanned]);
+
+  return (
+    <div className="scanner-container">
+      <video ref={videoRef} className="video" playsInline muted />
+      {error && <p className="error-text">{error}</p>}
+      <p className="hint-text">Point the camera at the book barcode</p>
+    </div>
+  );
+}

@@ -1,0 +1,38 @@
+import { useEffect, useState } from 'react';
+import { getHistory } from '../services/storage';
+import { Link } from 'react-router-dom';
+
+export default function History() {
+  const [history, setHistory] = useState([]);
+
+  useEffect(() => {
+    setHistory(getHistory());
+  }, []);
+
+  return (
+    <div className="page">
+      <h2>History</h2>
+      {history.length === 0 && <p>No scans yet.</p>}
+
+      {history.map((item, i) => (
+        <Link
+          to={`/book/${encodeURIComponent(item.isbn)}`}
+          key={i}
+          className="card card-link"
+        >
+          <div className="card-row">
+            <div>
+              <strong>{item.title}</strong>
+              <div className="muted">
+                {item.authors && item.authors.join(', ')}
+              </div>
+              <div className="muted small">
+                ISBN: {item.isbn}
+              </div>
+            </div>
+          </div>
+        </Link>
+      ))}
+    </div>
+  );
+}

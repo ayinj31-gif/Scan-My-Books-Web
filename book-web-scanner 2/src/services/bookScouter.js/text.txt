@@ -1,0 +1,11 @@
+// Placeholder for BookScouter-style aggregated buyback prices.
+
+export async function getBookScouterPrice(isbn) {
+  try {
+    // Replace with real API logic later.
+    return null;
+  } catch (e) {
+    console.log('BookScouter error', e);
+    return null;
+  }
+}

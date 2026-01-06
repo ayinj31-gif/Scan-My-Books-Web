@@ -1,0 +1,22 @@
+import { Link } from 'react-router-dom';
+
+export default function Home() {
+  return (
+    <div className="page">
+      <h2>Welcome</h2>
+      <p>Scan a book barcode to see online prices and estimate profit.</p>
+
+      <Link className="btn primary" to="/scan">
+        Start Scanning
+      </Link>
+
+      <Link className="btn" to="/history">
+        View History
+      </Link>
+
+      <Link className="btn" to="/settings">
+        Settings & Profit Rules
+      </Link>
+    </div>
+  );
+}

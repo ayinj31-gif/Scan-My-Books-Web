@@ -1,0 +1,12 @@
+// Placeholder for Amazon pricing.
+// Amazon Product Advertising API or a 3rd-party service would go here.
+
+export async function getAmazonPrice(isbn) {
+  try {
+    // Plug in a real API later if you want.
+    return null;
+  } catch (e) {
+    console.log('Amazon price error', e);
+    return null;
+  }
+}

@@ -1,0 +1,35 @@
+export async function lookupBook(isbn) {
+  try {
+    const url = `https://www.googleapis.com/books/v1/volumes?q=isbn:${encodeURIComponent(
+      isbn
+    )}`;
+    const res = await fetch(url);
+    const json = await res.json();
+
+    if (!json.items || json.items.length === 0) return null;
+
+    const item = json.items[0];
+    const info = item.volumeInfo || {};
+    const sale = item.saleInfo || {};
+
+    let priceNumber = null;
+    let currency = null;
+
+    if (sale.listPrice && typeof sale.listPrice.amount === 'number') {
+      priceNumber = sale.listPrice.amount;
+      currency = sale.listPrice.currencyCode || 'USD';
+    }
+
+    return {
+      title: info.title || 'Unknown title',
+      authors: info.authors || [],
+      thumbnail: info.imageLinks?.thumbnail || null,
+      description: info.description || '',
+      priceNumber,
+      currency
+    };
+  } catch (e) {
+    console.log('Google Books error', e);
+    return null;
+  }
+}

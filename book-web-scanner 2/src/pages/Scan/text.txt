@@ -1,0 +1,18 @@
+import { useNavigate } from 'react-router-dom';
+import Scanner from '../components/Scanner';
+
+export default function Scan() {
+  const navigate = useNavigate();
+
+  const handleScan = (code) => {
+    // Most ISBN barcodes will be the ISBN itself
+    navigate(`/book/${encodeURIComponent(code)}`);
+  };
+
+  return (
+    <div className="page">
+      <h2>Scan ISBN</h2>
+      <Scanner onScan={handleScan} />
+    </div>
+  );
+}

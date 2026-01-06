@@ -1,0 +1,13 @@
+// Placeholder simple implementation:
+// In reality you’d call eBay APIs with an app key.
+// Here we just return null so the app still works.
+
+export async function getEbayPrice(isbn) {
+  try {
+    // You can later plug in a real eBay API here.
+    return null;
+  } catch (e) {
+    console.log('eBay price error', e);
+    return null;
+  }
+}

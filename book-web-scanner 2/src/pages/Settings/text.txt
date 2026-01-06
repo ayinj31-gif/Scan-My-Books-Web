@@ -1,0 +1,79 @@
+import { useEffect, useState } from 'react';
+import { getSettings, saveSettings } from '../services/storage';
+
+export default function Settings() {
+  const [feePercent, setFeePercent] = useState('15');
+  const [shippingCost, setShippingCost] = useState('3.00');
+  const [buyCost, setBuyCost] = useState('1.00');
+  const [minProfit, setMinProfit] = useState('3.00');
+
+  useEffect(() => {
+    const s = getSettings();
+    if (s) {
+      setFeePercent(String(s.feePercent || '15'));
+      setShippingCost(String(s.shippingCost || '3.00'));
+      setBuyCost(String(s.buyCost || '1.00'));
+      setMinProfit(String(s.minProfit || '3.00'));
+    }
+  }, []);
+
+  const handleSave = () => {
+    saveSettings({
+      feePercent,
+      shippingCost,
+      buyCost,
+      minProfit
+    });
+    alert('Settings saved');
+  };
+
+  return (
+    <div className="page">
+      <h2>Settings & Profit Rules</h2>
+
+      <div className="form-group">
+        <label>Marketplace fee (%)</label>
+        <input
+          type="number"
+          value={feePercent}
+          onChange={(e) => setFeePercent(e.target.value)}
+        />
+      </div>
+
+      <div className="form-group">
+        <label>Average shipping cost</label>
+        <input
+          type="number"
+          value={shippingCost}
+          onChange={(e) => setShippingCost(e.target.value)}
+        />
+      </div>
+
+      <div className="form-group">
+        <label>Your buy cost per book</label>
+        <input
+          type="number"
+          value={buyCost}
+          onChange={(e) => setBuyCost(e.target.value)}
+        />
+      </div>
+
+      <div className="form-group">
+        <label>Minimum profit to count as "worth selling"</label>
+        <input
+          type="number"
+          value={minProfit}
+          onChange={(e) => setMinProfit(e.target.value)}
+        />
+      </div>
+
+      <button className="btn primary" onClick={handleSave}>
+        Save Settings
+      </button>
+
+      <p className="muted small">
+        These settings are stored only on this device using local storage.
+      </p>
+    </div>
+  );
+}
